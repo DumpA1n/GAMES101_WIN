@@ -223,6 +223,23 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
     // Position p = p + kn * n * h(u,v)
     // Normal n = normalize(TBN * ln)
 
+    auto n = normal;
+    auto x = n.x(), y = n.y(), z = n.z();
+    auto u = payload.tex_coords.x();
+    auto v = payload.tex_coords.y();
+    float w = (float)payload.texture->width;
+    float h = (float)payload.texture->height;
+    Vector3f t(x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z));
+    Vector3f b = n.cross(t);
+    Matrix3f TBN = Matrix3f::Identity();
+    TBN << t, b, n;
+    auto dU = kh * kn * (payload.texture->getColor(u+1/w,v).norm()-payload.texture->getColor(u,v).norm());
+    auto dV = kh * kn * (payload.texture->getColor(u,v+1/h).norm()-payload.texture->getColor(u,v).norm());
+    Vector3f ln(-dU, -dV, 1);
+    normal = (TBN * ln).normalized();
+    
+    point += kn * n * payload.texture->getColor(u,v).norm();
+
     Eigen::Vector3f result_color = {0, 0, 0};
 
     for (auto& light : lights)
@@ -342,8 +359,8 @@ int main(int argc, const char** argv)
     // std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = normal_fragment_shader;
     // std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = phong_fragment_shader;
     // std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = texture_fragment_shader;
-    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = bump_fragment_shader;
-    // std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = displacement_fragment_shader;
+    // std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = bump_fragment_shader;
+    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = displacement_fragment_shader;
 
     if (argc >= 2)
     {
