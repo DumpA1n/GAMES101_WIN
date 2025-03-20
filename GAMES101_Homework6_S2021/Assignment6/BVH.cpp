@@ -106,4 +106,24 @@ Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
 {
     // TODO Traverse the BVH to find intersection
 
+    // for safe ?
+    if (node == nullptr)
+        return {};
+
+    // 不与外包围盒相交则不用继续递归
+    bool bAABB = node->bounds.IntersectP(ray, ray.direction_inv, {(int)(ray.direction.x > 0), (int)(ray.direction.y > 0), (int)(ray.direction.z > 0)});
+    if (!bAABB)
+        return {};
+
+    // 只对叶子结点求交
+    if (node->left == nullptr && node->right == nullptr)
+        return node->object->getIntersection(ray);
+
+    Intersection inter1 = getIntersection(node->left, ray);
+    Intersection inter2 = getIntersection(node->right, ray);
+
+    if (!inter1.happened) return inter2;
+    if (!inter2.happened) return inter1;
+
+    return inter1.distance < inter2.distance ? inter1 : inter2;
 }
