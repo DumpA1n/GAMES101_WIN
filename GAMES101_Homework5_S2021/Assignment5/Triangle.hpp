@@ -11,6 +11,51 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1, const Vector3f
     // that's specified bt v0, v1 and v2 intersects with the ray (whose
     // origin is *orig* and direction is *dir*)
     // Also don't forget to update tnear, u and v.
+    
+    //        P = (1-u-v)*v0 + u*v1+ v*v2
+    //   O + tD = v0 + u(v1 - v0) + v(v2 - v0)
+    //   O - v0 = -tD + u(v1 - v0) + v(v2 - v0)
+
+    //                              [ t ]
+    //   [  -D  (v1-v0)  (v2-v0)  ] [ u ] = O - v0
+    //                              [ v ]
+
+    //                   [ t ]
+    //   [  -D  E1  E2 ] [ u ] = S
+    //                   [ v ]
+
+    //   克莱姆法则:
+    //         det[  S E1 E2 ]
+    //   t = -------------------
+    //         det[ -D E1 E2 ]
+    //
+    //         det[ -D S  E2 ]
+    //   u = -------------------
+    //         det[ -D E1 E2 ]
+    //
+    //         det[ -D E1 S  ]
+    //   v = -------------------
+    //         det[ -D E1 E2 ]
+
+    Vector3f E1 = v1 - v0;
+    Vector3f E2 = v2 - v0;
+    Vector3f S  = orig - v0;
+    Vector3f S1 = crossProduct(dir, E2);
+    Vector3f S2 = crossProduct(S, E1);
+
+    float det = dotProduct(E1, S1);
+
+    float _tnear = dotProduct(S2, E2)  / det;
+    float _u     = dotProduct(S1, S)   / det;
+    float _v     = dotProduct(S2, dir) / det;
+
+    if (_tnear >= 0 && _u >= 0 && _v >= 0 && (1 - _u - _v) >= 0) {
+        tnear = _tnear;
+        u = _u;
+        v = _v;
+        return true;
+    }
+
     return false;
 }
 
